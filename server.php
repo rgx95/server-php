@@ -15,12 +15,17 @@ function add_to_registered_path($path, $method, $callback) {
 	global $registered_path;
 	
 	$obj = new RegisteredPath();
-	$obj->method = $method;
-	$obj->callback = $callback;
+	$obj->method = $method; // validation
+	$obj->callback = $callback; // validation
 	// print_r($obj);
 		
 	// path not exists
-	if (!path_exists($path)) 
+  if (!path_is_valid($path))
+  {
+    print('path is not valid');
+    $return = false;
+  }
+	else if (!path_exists($path)) 
 	{
 		$registered_path[$path] = array($obj);
 		$return = true; // success
@@ -47,15 +52,16 @@ function add_to_registered_path($path, $method, $callback) {
 	return $return;
 }
 
+function path_is_valid($path) {
+  return preg_match('/(\/:?\w)+/', $path) ? true : false;
+}
+
 function path_exists($path) {
-	$result = null;
-	
 	global $registered_path;
-	
 	return array_key_exists($path, $registered_path);
 }
 
-function find_registered($path, $method = "GET") {
+function find_registered_method($path, $method = "GET") {
 	$result = null;
 	
 	global $registered_path;
@@ -74,16 +80,45 @@ function find_registered($path, $method = "GET") {
 	return $result;
 }
 
+function get_request_path() {
+  //todo
+  //preg_match('/(\/:?\w)+/', $_SERVER['REQUEST_URI']);
+  //preg_match('/(\/\w)+/', $_SERVER['REQUEST_URI']);
+  
+  return $_SERVER['REQUEST_URI'];
+}
 
-add_to_registered_path("/home/", "POST", function(){echo "hello /home/POST\n";});
-add_to_registered_path("/home/", "GET", function(){echo "hello /home/GET\n";});
-add_to_registered_path("/home/", "PUT", function(){echo "hello /home/PUT\n";});
-add_to_registered_path("/home/", "DELETE", function(){echo "hello /home/DELETE\n";});
-add_to_registered_path("/home/room", "POST", function(){echo "hello /home/room/POST\n";});
-add_to_registered_path("/home/kitchen", "POST", function(){echo "hello /home/kitchen/POST\n";});
+function get_request_method() {
+  //todo
+  return $_SERVER['REQUEST_METHOD'];
+}
+
+function get_request_query() {
+  //todo
+}
+
+function get_request_query_assoc() {
+  //todo
+  return $_GET;
+}
+
+function get_request_params() {
+  //todo
+  // post passed params
+  return $_POST;
+}
+
+function get_request_body() {
+  //todo
+  return file_get_contents("php://input");
+}
 
 
-call_user_func(find_registered("/home/", "DELETE")->callback);
+//add_"to_registered_path("/home/", "POST", function(){echo "hello /home/POST\n";});
+
+//call_user_func(find_registered_method("/home/", "DELETE")->callback);
+
+
 
 
 
