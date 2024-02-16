@@ -7,7 +7,6 @@ class RegisteredPath {
 	public $callback;
 };
 
-
 function add_to_registered_path($path, $method, $callback) {
 	
 	$return = false; // fail
@@ -22,7 +21,7 @@ function add_to_registered_path($path, $method, $callback) {
 	// path not exists
   if (!path_is_valid($path))
   {
-    print('path is not valid');
+    print("path '$path' is not valid");
     $return = false;
   }
 	else if (!path_exists($path)) 
@@ -86,6 +85,7 @@ function get_request_path() {
   //preg_match('/(\/\w)+/', $_SERVER['REQUEST_URI']);
   
   return $_SERVER['REQUEST_URI'];
+  
 }
 
 function get_request_method() {
@@ -95,6 +95,9 @@ function get_request_method() {
 
 function get_request_query() {
   //todo
+  $query_str = filter_var($_SERVER['QUERY_STRING'], FILTER_SANITIZE_STRING);
+  $query_str = htmlspecialchars($query_str, ENT_QUOTES, 'UTF-8');
+  return $query_str;
 }
 
 function get_request_query_assoc() {
@@ -114,10 +117,38 @@ function get_request_body() {
 }
 
 
+
+
+
 //add_"to_registered_path("/home/", "POST", function(){echo "hello /home/POST\n";});
 
 //call_user_func(find_registered_method("/home/", "DELETE")->callback);
 
+
+// MAIN FLOW
+  // a request arrives
+  // handler starts
+  // - checks if the path matches a pattern
+  // - checks if the method is available for that pattern
+  // exec the callback associated
+
+
+
+// NOTES TO VALIDATION/SANITIZATION
+  // validate email
+  // filter_var($inputToValidate, FILTER_VALIDATE_MAIL)
+  
+  // sanitize, removes potential security issues
+  // filter_var($inputToValidate, FILTER_SANITIZE_STRING)
+  
+  // custom regexp validation
+  // preg_match('/\w+/', $inputToValidate)
+  
+  // apparently equivalent to filter_var()
+  // filter_input()
+  
+  // avoid XSS attacks, code injection through outputted inputs
+  // htmlspecialchars($inputToValidate, ENT-QUOTES, 'UTF-8')
 
 
 
