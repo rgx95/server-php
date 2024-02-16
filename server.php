@@ -84,7 +84,7 @@ function get_request_path() {
   //preg_match('/(\/:?\w)+/', $_SERVER['REQUEST_URI']);
   //preg_match('/(\/\w)+/', $_SERVER['REQUEST_URI']);
   
-  return $_SERVER['REQUEST_URI'];
+  return filter_var($_SERVER['REQUEST_URI'], FILTER_SANITIZE_URL);
   
 }
 
@@ -111,11 +111,42 @@ function get_request_params() {
   return $_POST;
 }
 
-function get_request_body() {
-  //todo
-  return file_get_contents("php://input");
+function get_raw_request_body() {
+  $raw_body = file_get_contents("php://input");
+  $sanitized_body = filter_var($raw_body, FILTER_SANITIZE_STRING);
+  $safe_body = htmlspecialchars($sanitized_body, ENT_QUOTES, 'UTF-8');   
+  return $safe_body;
 }
 
+function get_json_body() { // $schema = null) {
+	
+	$raw_body = file_get_contents("php://input");
+	$json = json_decode($raw_body);
+	
+	return $json;
+	
+	/* simple schema validation
+	if ($schema != null) {
+		$props = get_object_vars($json);
+		$props_keys = array_keys($props);
+		print_r($props_keys);
+		$keys_in_common = array_intersect($schema, $props_keys);	
+		
+		if (count($keys_in_common) == count($props_keys)) {			
+			return $json;
+		} else {
+			return null;
+		}
+	}*/
+}
+
+
+
+
+// zona di test
+
+
+// fine zona di test
 
 
 
