@@ -1,0 +1,135 @@
+<p style="position: absolute;
+	right: 0px;
+	top: 0px;
+	padding: 0px;
+	margin: 0px;">
+	
+	ping <span id="ping"></span> ms
+</p>
+
+<div style="position: relative;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 250px;
+	margin: auto;
+	border: 1px black solid;
+	padding: 12px;
+	text-align: center">
+	
+	<p>
+		<input id="url"
+			type="text"
+			onclick="copy()"
+			style="display:none;">
+		<br>
+		<span id="urlCopied" style="font-size:8pt;"></span>
+	</p>
+		
+	<p>
+		<ul id="players">
+		</ul>		
+	</p>
+	
+	<p>
+		<input id="name"
+			type="text"
+			placeholder="name goes here">
+		<button id="create" onclick="create()">create</button>
+		<button id="join" onclick="join()" style="display: none;">join</button>
+		<button id="leave" onclick="leave()" style="display: none;">leave</button>
+	
+	</p>
+	
+</div>
+
+
+<script>
+
+let urlInput = document.getElementById('url');
+let urlCopiedSpan = document.getElementById('urlCopied');
+let pingSpan = document.getElementById('ping');
+let playersUl = document.getElementById('players');
+let nameInput = document.getElementById('name');
+let createButton = document.getElementById('create');
+let joinButton = document.getElementById('join');
+let leaveButton = document.getElementById('leave');
+
+urlInput.value = window.location.href;
+
+let pingInterval = setInterval(function () {
+	fetch('/server-php/server.php/room/ping')
+	.then(response => {
+		if (!response.ok) {
+			throw new Error('Errore nella richiesta');
+		}
+		return response.text();
+	})
+	.then(data => {
+		let serverTimestamp = new Date(parseInt(data));
+		let clientTimestamp = new Date().getTime();
+		pingSpan.innerText = Math.abs(clientTimestamp - serverTimestamp);
+	})
+	.catch(error => {
+		console.error('error: ', error);
+	});
+}, 1000);
+
+function copy () {
+	urlInput.value = window.location.href;
+    urlInput.select();
+    document.execCommand("copy");
+	urlCopiedSpan.innerText = "URL copiato negli appunti";
+	setTimeout(function () {
+		urlCopiedSpan.innerText = "";
+	}, 1500);
+}
+
+function nameIsValid(n) {
+	return (n.length > 0) && (typeof n == 'string');
+}
+
+function create () {
+	if (!nameIsValid(nameInput.value)) {
+		return console.error('no name provided');
+	}
+	
+	fetch('/server-php/server.php/room/create')
+	.then(response => {
+		if (!response.ok) {
+			throw new Error('Errore nella richiesta');
+		}		
+		return response.text();
+	})
+	.then(data => {
+		location.href = '/server-php/server.php/room/' + data;
+		createButton.style.display = 'none';
+		leaveButton.style.display = 'inline';
+	})
+	.catch(error => {
+		console.error('error: ', error);
+	});
+}
+
+function join () {
+	alert('join');
+	
+	joinButton.style.display = 'none';
+	leaveButton.style.display = 'inline';
+}
+
+function leave () {
+
+	leaveButton.style.display = 'none';
+	joinButton.style.display = 'inline';
+}
+
+</script>
+
+
+
+
+
+
+
+
+

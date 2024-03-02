@@ -22,22 +22,36 @@ class RequestObject {
 
 
 /***********************************************************************
-function rimuovi_base_path ()
+function rimuovi_base_path_e_query ()
 
-rimuove il percorso base se lo script php che eseguo è in una directory
+rimuove la parte della query, 
+il percorso base se lo script php che eseguo è in una directory
 diversa da / 
-eg: http://www.miosito.it/server/server.php
+eg: http://www.miosito.it/server/server.php?q=1234
 Una richiesta sarà del tipo (GET) /server/server.php/mappa/pisa
-rimuovo /server/server.php da $_SERVER['REQUEST_URI'] così rimane
+rimuovo '/server/server.php' e '?q=1234' da $_SERVER['REQUEST_URI'] 
+così rimane
 /mappa/pisa su cui effettuare il match tra i pattern registrati
 ***********************************************************************/
-function rimuovi_base_path () {
+function rimuovi_base_path_e_query () {
+	
+	// Ottieni l'URI completo della richiesta
+	$fullRequestUri = $_SERVER['REQUEST_URI'];
+
+	// Utilizza parse_url per dividere l'URI
+	$parsedUrl = parse_url($fullRequestUri);
+
+	// Ottieni la parte del percorso senza la query
+	$pathWithoutQuery = $parsedUrl['path'];
+	
+	
 	// se definita la costante BASE_PATH
 	if (defined('BASE_PATH')) {
 		// ritorno il percorso, rimosso il base_path
-		return str_replace(BASE_PATH, '', $_SERVER['REQUEST_URI']);
+		$clean = str_replace(BASE_PATH, '', $pathWithoutQuery);		
+		return $clean;
 	} else {
-		return $_SERVER['REQUEST_URI'];
+		return $pathWithoutQuery;
 	}
 }
 
@@ -98,51 +112,55 @@ return string | null se fallisco
 function genera_pattern($path) {
 	$pattern = '~^'; // delimitatore di inizio del pattern
 	
-	// accetta /abcd /a123 /:abcd /:a123
-	if (preg_match_all('~/:?[A-Za-z]\w*~', $path, $matches)) {
-		
-		// tolgo lo strato occorrenze, sub stringhe che qui non serve
-		// non essendoci nessuna sub-string (no gruppi di cattura)
-		$matches = $matches[0];
-		
-		foreach ($matches as $match) {			
-			if (strpos($match, ':') !== false) {
-				// se è presente il ':'
-				
-				// tolgo i primi due caratteri '/:'
-				// così ottengo il nome del parametro
-				$nome_parametro = substr($match, 2);
-				// assegno il nome al gruppo di cattura
-				$temp = '/(?P<' . $nome_parametro . '>\w+)';
-				
-				if (strpos($pattern, $temp) !== false) {
-					// se trovo un altro param con lo stesso nome
-					// esco ritornando errore (null)
-					return null;
-				} else {
-					$pattern .= $temp;
-				}
-				
-			} else {
-				// se manca il ':'
-				$pattern .= $match;
-			}		
-		}		
-
-		// chiusura del pattern
-		$pattern .= '/?$~';
-		return $pattern;
-		
-	} else if ($path == '/'  || $path == '') { // casi di path vuoto
-		// chiusura del pattern
-		$pattern .= '/?$~';
-		return $pattern;
-	
-	} else { // se il path non è valido
-		print("genera_pattern($path): $path non valido");
+	if (!preg_match('~^(/:?[A-Za-z]\w*)*/?$~', $path)) {
+		// caso pattern non valido
+		print("genera_path($path): path must begin with '/' or can be an empty string.\n");
 		return null;
-	}
+		
+	} else {
 	
+		// accetta /abcd /a123 /:abcd /:a123
+		if (preg_match_all('~/:?[A-Za-z]\w*~', $path, $matches)) {
+			
+			// tolgo lo strato occorrenze, sub stringhe che qui non serve
+			// non essendoci nessuna sub-string (no gruppi di cattura)
+			$matches = $matches[0];
+			
+			foreach ($matches as $match) {			
+				if (strpos($match, ':') !== false) {
+					// se è presente il ':'
+					
+					// tolgo i primi due caratteri '/:'
+					// così ottengo il nome del parametro
+					$nome_parametro = substr($match, 2);
+					// assegno il nome al gruppo di cattura
+					$temp = '/(?P<' . $nome_parametro . '>\w+)';
+					
+					if (strpos($pattern, $temp) !== false) {
+						// se trovo un altro param con lo stesso nome
+						// esco ritornando errore (null)
+						return null;
+					} else {
+						$pattern .= $temp;
+					}
+					
+				} else {
+					// se manca il ':'
+					$pattern .= $match;
+				}		
+			}		
+
+			// chiusura del pattern
+			$pattern .= '/?$~';
+			return $pattern;
+			
+		} else if ($path == '/'  || $path == '') { // casi di path vuoto
+			// chiusura del pattern
+			$pattern .= '/?$~';
+			return $pattern;
+		}
+	
+	}
 }
 
 
@@ -231,7 +249,7 @@ recupera la query, il body, i params e li passa alla callback
 ***********************************************************************/
 function elabora_richiesta() {
 	// rimuovo il path base
-	$request_path = rimuovi_base_path();
+	$request_path = rimuovi_base_path_e_query();
 	// leggo la tipologia di richiesta
 	$request_method = $_SERVER['REQUEST_METHOD'];
 	// garantisco l'accesso all'array globale
